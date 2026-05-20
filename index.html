@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PredictaMAR</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ocean-deep: #042C53;
+    --ocean-mid: #0C447C;
+    --ocean-bright: #185FA5;
+    --ocean-light: #378ADD;
+    --ocean-pale: #B5D4F4;
+    --ocean-fog: #E6F1FB;
+    --teal-bright: #1D9E75;
+    --teal-light: #9FE1CB;
+    --teal-fog: #E1F5EE;
+    --text-dark: #042C53;
+    --text-muted: #5F5E5A;
+    --white: #ffffff;
+    --border: rgba(4,44,83,0.12);
+  }
+  body { font-family: 'DM Sans', sans-serif; color: var(--text-dark); background: var(--white); overflow-x: hidden; }
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1rem 3rem; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 0.5px solid var(--border); }
+  .nav-logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 500; color: var(--ocean-deep); letter-spacing: -0.02em; }
+  .nav-logo span { color: var(--ocean-light); }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a { font-size: 0.85rem; color: var(--text-muted); text-decoration: none; letter-spacing: 0.04em; text-transform: uppercase; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--ocean-bright); }
+  .nav-cta { background: var(--ocean-deep) !important; color: white !important; padding: 0.5rem 1.2rem; border-radius: 40px; font-size: 0.8rem !important; }
+  .nav-cta:hover { background: var(--ocean-bright) !important; }
+  .hero { position: relative; height: 100vh; display: flex; align-items: center; overflow: hidden; background: var(--ocean-deep); }
+  canvas#ocean { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.7; }
+  .hero-content { position: relative; z-index: 10; padding: 0 3rem; max-width: 700px; }
+  .hero-tag { display: inline-block; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal-light); border: 0.5px solid var(--teal-light); border-radius: 40px; padding: 0.35rem 0.9rem; margin-bottom: 1.5rem; opacity: 0; animation: fadeUp 0.8s 0.2s forwards; }
+  .hero-title { font-family: 'Playfair Display', serif; font-size: clamp(3rem, 6vw, 5rem); font-weight: 400; color: white; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 1.5rem; opacity: 0; animation: fadeUp 0.8s 0.4s forwards; }
+  .hero-title em { font-style: italic; color: var(--ocean-pale); }
+  .hero-sub { font-size: 1rem; font-weight: 300; color: rgba(255,255,255,0.72); line-height: 1.7; max-width: 480px; margin-bottom: 2.5rem; opacity: 0; animation: fadeUp 0.8s 0.6s forwards; }
+  .hero-actions { display: flex; gap: 1rem; align-items: center; opacity: 0; animation: fadeUp 0.8s 0.8s forwards; }
+  .btn-primary { background: var(--teal-bright); color: white; padding: 0.75rem 1.8rem; border-radius: 40px; font-size: 0.85rem; font-weight: 500; text-decoration: none; transition: background 0.2s, transform 0.2s; display: inline-block; }
+  .btn-primary:hover { background: #0F6E56; transform: translateY(-1px); }
+  .btn-ghost { color: rgba(255,255,255,0.7); font-size: 0.85rem; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; transition: color 0.2s; }
+  .btn-ghost:hover { color: white; }
+  .hero-scroll { position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.4); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; z-index: 10; animation: bounce 2s infinite; }
+  .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, rgba(255,255,255,0.4), transparent); }
+  section { padding: 6rem 3rem; }
+  .section-tag { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ocean-light); margin-bottom: 1rem; display: block; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 400; color: var(--ocean-deep); line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 1.5rem; }
+  .section-title em { font-style: italic; color: var(--ocean-light); }
+  .problem { background: var(--ocean-fog); display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  .problem-text p { font-size: 1rem; color: var(--text-muted); line-height: 1.8; margin-bottom: 1rem; font-weight: 300; }
+  .problem-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .stat-card { background: white; border-radius: 12px; padding: 1.5rem; border: 0.5px solid var(--border); }
+  .stat-num { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 400; color: var(--ocean-bright); line-height: 1; margin-bottom: 0.5rem; }
+  .stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 300; line-height: 1.4; }
+  .how { background: white; }
+  .how-header { max-width: 600px; margin-bottom: 4rem; }
+  .how-header p { font-size: 1rem; color: var(--text-muted); line-height: 1.8; font-weight: 300; }
+  .scales { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .scale-card { border: 0.5px solid var(--border); border-radius: 16px; padding: 2rem; position: relative; overflow: hidden; transition: border-color 0.2s, transform 0.2s; }
+  .scale-card:hover { border-color: var(--ocean-light); transform: translateY(-3px); }
+  .scale-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--ocean-light); opacity: 0; transition: opacity 0.2s; }
+  .scale-card:hover::before { opacity: 1; }
+  .scale-num { font-family: 'Playfair Display', serif; font-size: 3rem; color: var(--ocean-fog); font-weight: 400; line-height: 1; margin-bottom: 1rem; }
+  .scale-name { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ocean-light); margin-bottom: 0.5rem; }
+  .scale-title { font-size: 1.1rem; font-weight: 500; color: var(--ocean-deep); margin-bottom: 0.75rem; line-height: 1.3; }
+  .scale-desc { font-size: 0.875rem; color: var(--text-muted); line-height: 1.7; font-weight: 300; }
+  .scale-sources { margin-top: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .source-tag { font-size: 0.68rem; font-weight: 500; color: var(--ocean-mid); background: var(--ocean-fog); border-radius: 40px; padding: 0.2rem 0.6rem; letter-spacing: 0.04em; }
+  .pipeline { background: var(--ocean-deep); }
+  .pipeline-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin-top: 3rem; position: relative; }
+  .pipeline-grid::before { content: ''; position: absolute; top: 2rem; left: 10%; right: 10%; height: 1px; background: rgba(255,255,255,0.1); }
+  .pipe-step { padding: 0 1rem; text-align: center; position: relative; }
+  .pipe-dot { width: 36px; height: 36px; border-radius: 50%; background: var(--ocean-bright); border: 2px solid var(--ocean-pale); margin: 0 auto 1.25rem; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 500; color: white; position: relative; z-index: 2; }
+  .pipe-step:first-child .pipe-dot, .pipe-step:last-child .pipe-dot { background: var(--teal-bright); }
+  .pipe-label { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ocean-pale); margin-bottom: 0.5rem; }
+  .pipe-desc { font-size: 0.78rem; color: rgba(255,255,255,0.5); line-height: 1.5; font-weight: 300; }
+  .credentials { background: white; }
+  .cred-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3rem; }
+  .cred-card { background: var(--ocean-fog); border-radius: 16px; padding: 2rem; border: 0.5px solid var(--ocean-pale); display: flex; flex-direction: column; gap: 0.75rem; }
+  .cred-icon { width: 44px; height: 44px; border-radius: 10px; background: var(--ocean-bright); display: flex; align-items: center; justify-content: center; margin-bottom: 0.25rem; }
+  .cred-icon svg { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .cred-year { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ocean-light); }
+  .cred-name { font-size: 1rem; font-weight: 500; color: var(--ocean-deep); line-height: 1.35; }
+  .cred-detail { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; font-weight: 300; }
+  .cred-link { font-size: 0.78rem; color: var(--ocean-light); text-decoration: none; word-break: break-all; }
+  .cred-link:hover { text-decoration: underline; }
+  .team { background: var(--teal-fog); }
+  .team-header { max-width: 500px; margin-bottom: 3rem; }
+  .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .member-card { background: white; border-radius: 16px; padding: 2rem; border: 0.5px solid rgba(29,158,117,0.2); transition: transform 0.2s, border-color 0.2s; }
+  .member-card:hover { transform: translateY(-2px); border-color: var(--teal-bright); }
+  .member-avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--ocean-deep); display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 1.2rem; color: white; margin-bottom: 1rem; }
+  .member-name { font-size: 1rem; font-weight: 500; color: var(--ocean-deep); margin-bottom: 0.25rem; }
+  .member-role { font-size: 0.78rem; color: var(--teal-bright); font-weight: 400; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.75rem; }
+  .member-bio { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; font-weight: 300; margin-bottom: 0.75rem; }
+  .member-orcid { font-size: 0.75rem; color: var(--ocean-light); text-decoration: none; display: flex; align-items: center; gap: 0.3rem; }
+  .member-orcid:hover { text-decoration: underline; }
+  .orcid-badge { background: #A6CE39; color: white; font-size: 0.6rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 3px; letter-spacing: 0.04em; }
+  .demo-section { background: var(--ocean-deep); text-align: center; padding: 5rem 3rem; }
+  .demo-section .section-title { color: white; }
+  .demo-section .section-tag { color: var(--teal-light); }
+  .demo-section p { font-size: 1rem; color: rgba(255,255,255,0.6); font-weight: 300; max-width: 500px; margin: 0 auto 2rem; line-height: 1.8; }
+  .demo-btn { display: inline-flex; align-items: center; gap: 0.6rem; background: white; color: var(--ocean-deep); padding: 0.9rem 2rem; border-radius: 40px; font-size: 0.9rem; font-weight: 500; text-decoration: none; transition: transform 0.2s, background 0.2s; }
+  .demo-btn:hover { background: var(--ocean-pale); transform: translateY(-2px); }
+  .demo-note { margin-top: 1.25rem; font-size: 0.78rem; color: rgba(255,255,255,0.35); letter-spacing: 0.04em; }
+  .contact { background: white; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+  .contact-info p { font-size: 1rem; color: var(--text-muted); line-height: 1.8; font-weight: 300; margin-bottom: 2rem; }
+  .contact-detail { display: flex; flex-direction: column; gap: 0.75rem; }
+  .contact-item { display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.88rem; color: var(--text-muted); }
+  .contact-item strong { color: var(--ocean-deep); font-weight: 500; min-width: 80px; }
+  .contact-item a { color: var(--ocean-light); text-decoration: none; word-break: break-all; }
+  .contact-item a:hover { text-decoration: underline; }
+  .contact-form { display: flex; flex-direction: column; gap: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .form-group label { font-size: 0.78rem; font-weight: 500; color: var(--ocean-mid); letter-spacing: 0.04em; text-transform: uppercase; }
+  .form-group input, .form-group textarea { padding: 0.75rem 1rem; border: 0.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ocean-deep); background: var(--ocean-fog); outline: none; transition: border-color 0.2s; resize: vertical; }
+  .form-group input:focus, .form-group textarea:focus { border-color: var(--ocean-light); background: white; }
+  .form-submit { background: var(--ocean-deep); color: white; border: none; padding: 0.85rem 2rem; border-radius: 40px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: background 0.2s, transform 0.2s; align-self: flex-start; }
+  .form-submit:hover { background: var(--ocean-bright); transform: translateY(-1px); }
+  footer { background: var(--ocean-deep); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; border-top: 0.5px solid rgba(255,255,255,0.08); }
+  .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: white; }
+  .footer-logo span { color: var(--ocean-pale); }
+  .footer-credits { font-size: 0.75rem; color: rgba(255,255,255,0.35); }
+  .footer-links { display: flex; gap: 1.5rem; }
+  .footer-links a { font-size: 0.75rem; color: rgba(255,255,255,0.4); text-decoration: none; letter-spacing: 0.04em; transition: color 0.2s; }
+  .footer-links a:hover { color: white; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bounce { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(6px); } }
+  .fade-in { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Predict<span>a</span>MAR</div>
+  <ul class="nav-links">
+    <li><a href="#problem">The Problem</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#credentials">Science</a></li>
+    <li><a href="#team">Team</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="https://predictamar-v62.streamlit.app" target="_blank" class="nav-cta">Access Demo</a></li>
+  </ul>
+</nav>
+
+<section class="hero" id="hero">
+  <canvas id="ocean"></canvas>
+  <div class="hero-content">
+    <span class="hero-tag">Near-Real-Time Ocean Intelligence</span>
+    <h1 class="hero-title">Where ocean data<br>meets <em>governance</em></h1>
+    <p class="hero-sub">PredictaMAR is an operational marine decision-support system built entirely on Copernicus Marine Service data — delivering actionable intelligence for sustainable fisheries governance.</p>
+    <div class="hero-actions">
+      <a href="#how" class="btn-primary">Explore the system</a>
+      <a href="#credentials" class="btn-ghost">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Scientific credentials
+      </a>
+    </div>
+  </div>
+  <div class="hero-scroll"><div class="scroll-line"></div>scroll</div>
+</section>
+
+<section class="problem" id="problem">
+  <div class="problem-text fade-in">
+    <span class="section-tag">The challenge</span>
+    <h2 class="section-title">The ocean is dynamic.<br><em>Governance is not.</em></h2>
+    <p>Fisheries authorities and regulatory bodies make decisions based on data that is months or years old. Meanwhile, the ocean changes daily — thermal fronts shift, upwelling zones collapse, biomass migrates.</p>
+    <p>The gap between oceanographic reality and regulatory response is costing food security, accelerating overexploitation, and leaving coastal communities without the intelligence they need to adapt.</p>
+    <p>PredictaMAR closes that gap with near-real-time operational intelligence derived from open satellite data.</p>
+  </div>
+  <div class="problem-stats fade-in">
+    <div class="stat-card"><div class="stat-num">4×</div><div class="stat-label">Daily automated pipeline runs — no manual intervention</div></div>
+    <div class="stat-card"><div class="stat-num">96</div><div class="stat-label">Monitored oceanographic points per coastal node</div></div>
+    <div class="stat-card"><div class="stat-num">6</div><div class="stat-label">Satellite variables fused in the MacroScore model</div></div>
+    <div class="stat-card"><div class="stat-num">7d</div><div class="stat-label">Persistence index tracking structural stability over time</div></div>
+  </div>
+</section>
+
+<section class="how" id="how">
+  <div class="how-header fade-in">
+    <span class="section-tag">Architecture</span>
+    <h2 class="section-title">Multi-scale <em>ocean intelligence</em></h2>
+    <p>PredictaMAR fuses data from three satellite scales into a single operational score — updated automatically four times per day and delivered through a lightweight decision interface.</p>
+  </div>
+  <div class="scales">
+    <div class="scale-card fade-in">
+      <div class="scale-num">01</div>
+      <div class="scale-name">Macro scale</div>
+      <div class="scale-title">Regional oceanographic context</div>
+      <div class="scale-desc">Chlorophyll-a, sea surface temperature, sea level anomaly, ocean currents and thermal fronts across the full coastal domain — updated every 6 hours.</div>
+      <div class="scale-sources">
+        <span class="source-tag">CMEMS OLCI 300m</span>
+        <span class="source-tag">SST 0.083°</span>
+        <span class="source-tag">SLA altimetry</span>
+        <span class="source-tag">VIIRS NASA 4km</span>
+      </div>
+    </div>
+    <div class="scale-card fade-in">
+      <div class="scale-num">02</div>
+      <div class="scale-name">Tactical scale</div>
+      <div class="scale-title">Filament and front detection</div>
+      <div class="scale-desc">Biological productivity gradients, thermal discontinuities and coastal upwelling structures detected at 300m resolution — identifying the boundaries where biomass concentrates.</div>
+      <div class="scale-sources">
+        <span class="source-tag">Sentinel-3 OLCI</span>
+        <span class="source-tag">Ic_v2 stability</span>
+        <span class="source-tag">Gradient analysis</span>
+      </div>
+    </div>
+    <div class="scale-card fade-in">
+      <div class="scale-num">03</div>
+      <div class="scale-name">Coastal refinement</div>
+      <div class="scale-title">20-metre nearshore intelligence</div>
+      <div class="scale-desc">Floating Algae Index and NIR/SWIR biological ratio from Sentinel-2 refine the score in nearshore zones — highest resolution layer available from open satellite data.</div>
+      <div class="scale-sources">
+        <span class="source-tag">Sentinel-2 GEE</span>
+        <span class="source-tag">FAI index</span>
+        <span class="source-tag">ISB ratio</span>
+        <span class="source-tag">20m resolution</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pipeline fade-in">
+  <span class="section-tag">Operational flow</span>
+  <h2 class="section-title" style="color:white; max-width:600px;">From satellite to<br><em style="color:var(--ocean-pale)">governance decision</em></h2>
+  <div class="pipeline-grid">
+    <div class="pipe-step"><div class="pipe-dot">1</div><div class="pipe-label">Acquisition</div><div class="pipe-desc">Copernicus, NASA &amp; ERA5 data downloaded automatically</div></div>
+    <div class="pipe-step"><div class="pipe-dot">2</div><div class="pipe-label">Fusion</div><div class="pipe-desc">MacroScore combines 6 variables with weighted spatial analysis</div></div>
+    <div class="pipe-step"><div class="pipe-dot">3</div><div class="pipe-label">Advection</div><div class="pipe-desc">Local current vectors project coordinates forward in time</div></div>
+    <div class="pipe-step"><div class="pipe-dot">4</div><div class="pipe-label">Persistence</div><div class="pipe-desc">7-day IPO index filters signal from noise across runs</div></div>
+    <div class="pipe-step"><div class="pipe-dot">5</div><div class="pipe-label">Intelligence</div><div class="pipe-desc">Operational outputs delivered to authorities and decision layers</div></div>
+  </div>
+</section>
+
+<section class="credentials" id="credentials">
+  <div class="fade-in">
+    <span class="section-tag">Scientific foundation</span>
+    <h2 class="section-title">Peer-reviewed.<br><em>Field-validated.</em></h2>
+  </div>
+  <div class="cred-grid">
+    <div class="cred-card fade-in">
+      <div class="cred-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+      <span class="cred-year">EGU 2026 · Session OS4.8</span>
+      <div class="cred-name">European Geosciences Union — Oral Presentation</div>
+      <div class="cred-detail">Copernicus Marine Service and European Digital Twin Ocean session. Abstract EGU26-22690. Presented virtually from Lima, Peru.</div>
+    </div>
+    <div class="cred-card fade-in">
+      <div class="cred-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+      <span class="cred-year">Fisheries Oceanography · Wiley Q1</span>
+      <div class="cred-name">Peer-reviewed manuscript — under review</div>
+      <div class="cred-detail">Full methodology paper submitted to Fisheries Oceanography. Preprint published on Zenodo.</div>
+      <a href="https://lnkd.in/dn_GQSAU" target="_blank" class="cred-link">DOI: lnkd.in/dn_GQSAU</a>
+      <a href="https://doi.org/10.5281/zenodo.19806218" target="_blank" class="cred-link">Zenodo: 10.5281/zenodo.19806218</a>
+    </div>
+    <div class="cred-card fade-in">
+      <div class="cred-icon"><svg viewBox="0 0 24 24"><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/><path d="M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M17.8 14.7A9 9 0 1 0 6.2 14.7"/></svg></div>
+      <span class="cred-year">Startup UNI 2025 · 1st place</span>
+      <div class="cred-name">Universidad Nacional de Ingeniería Lima</div>
+      <div class="cred-detail">Top award in the UNI national incubation program. Field validation across artisanal fishing communities in Callao, Pucusana and Ancón, Humboldt Current System, Peru.</div>
+    </div>
+  </div>
+</section>
+
+<section class="team" id="team">
+  <div class="team-header fade-in">
+    <span class="section-tag">The team</span>
+    <h2 class="section-title">Built by <em>researchers</em><br>for the real ocean</h2>
+  </div>
+  <div class="team-grid">
+    <div class="member-card fade-in">
+      <div class="member-avatar">RW</div>
+      <div class="member-name">Randy Yorry Warthon Velarde</div>
+      <div class="member-role">Co-founder &amp; Lead Researcher</div>
+      <div class="member-bio">Ocean intelligence architect. Leads satellite pipeline development, MacroScore methodology and strategic partnerships with INESC TEC Porto, CTN Spain and IMARPE Peru.</div>
+      <a href="https://orcid.org/0009-0000-6557-5321" target="_blank" class="member-orcid"><span class="orcid-badge">iD</span>0009-0000-6557-5321</a>
+    </div>
+    <div class="member-card fade-in">
+      <div class="member-avatar">MV</div>
+      <div class="member-name">Maik Valenzuela</div>
+      <div class="member-role">Co-founder &amp; Technical Lead</div>
+      <div class="member-bio">Systems engineering and operational infrastructure. Leads deployment architecture, data pipeline automation and integration with Google Earth Engine and Copernicus APIs.</div>
+      <a href="https://orcid.org/0000-0002-4004-1793" target="_blank" class="member-orcid"><span class="orcid-badge">iD</span>0000-0002-4004-1793</a>
+    </div>
+    <div class="member-card fade-in">
+      <div class="member-avatar">SW</div>
+      <div class="member-name">Samantha Warthon</div>
+      <div class="member-role">Co-founder &amp; Research</div>
+      <div class="member-bio">Marine science and field operations. Leads validation methodology, artisanal community engagement and data quality assurance across pilot sites in the Humboldt Current System.</div>
+      <a href="https://orcid.org/0009-0004-5997-0551" target="_blank" class="member-orcid"><span class="orcid-badge">iD</span>0009-0004-5997-0551</a>
+    </div>
+  </div>
+</section>
+
+<section class="demo-section fade-in" id="demo">
+  <span class="section-tag">Operational system</span>
+  <h2 class="section-title">See it running <em>today</em></h2>
+  <p>PredictaMAR runs four automated pipeline cycles per day. Access the live operational interface — credentials available upon request for partners and evaluators.</p>
+  <a href="https://predictamar-v62.streamlit.app" target="_blank" class="demo-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    Open live demo
+  </a>
+  <div class="demo-note">Access restricted · Credentials available to partners and evaluators upon request</div>
+</section>
+
+<section class="contact" id="contact">
+  <div class="contact-info fade-in">
+    <span class="section-tag">Get in touch</span>
+    <h2 class="section-title">Interested in<br><em>collaboration?</em></h2>
+    <p>We are open to research partnerships, consortium participation and institutional collaboration. PredictaMAR is designed as an open, interoperable system compatible with the EDITO/ILIAD ecosystem.</p>
+    <div class="contact-detail">
+      <div class="contact-item"><strong>Email</strong><a href="mailto:ywarthonv@gmail.com">ywarthonv@gmail.com</a></div>
+      <div class="contact-item"><strong>ORCID</strong><a href="https://orcid.org/0009-0000-6557-5321" target="_blank">0009-0000-6557-5321</a></div>
+      <div class="contact-item"><strong>Paper DOI</strong><a href="https://lnkd.in/dn_GQSAU" target="_blank">lnkd.in/dn_GQSAU</a></div>
+      <div class="contact-item"><strong>Zenodo</strong><a href="https://doi.org/10.5281/zenodo.19806218" target="_blank">10.5281/zenodo.19806218</a></div>
+      <div class="contact-item"><strong>Location</strong>Lima, Peru · Universidad Nacional de Ingeniería</div>
+    </div>
+  </div>
+  <div class="contact-form fade-in">
+    <div class="form-group"><label>Name</label><input type="text" placeholder="Your full name"></div>
+    <div class="form-group"><label>Institution</label><input type="text" placeholder="University, agency or organization"></div>
+    <div class="form-group"><label>Email</label><input type="email" placeholder="your@email.com"></div>
+    <div class="form-group"><label>Message</label><textarea rows="4" placeholder="Describe your interest or proposal..."></textarea></div>
+    <button class="form-submit">Send message</button>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">Predict<span>a</span>MAR</div>
+  <div class="footer-credits">© 2026 PredictaMAR · Lima, Peru · Built on Copernicus Marine Service</div>
+  <div class="footer-links">
+    <a href="https://predictamar-v62.streamlit.app" target="_blank">Live demo</a>
+    <a href="https://orcid.org/0009-0000-6557-5321" target="_blank">ORCID</a>
+    <a href="https://doi.org/10.5281/zenodo.19806218" target="_blank">Zenodo</a>
+  </div>
+</footer>
+
+<script>
+const canvas = document.getElementById('ocean');
+const ctx = canvas.getContext('2d');
+let t = 0, W, H;
+function resize() { W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; }
+resize();
+window.addEventListener('resize', resize);
+function drawOcean() {
+  ctx.clearRect(0, 0, W, H);
+  const layers = [
+    { waves: 6, amp: 18, speed: 0.4, y: 0.45, color: 'rgba(24,95,165,0.35)', width: 2 },
+    { waves: 4, amp: 28, speed: 0.25, y: 0.52, color: 'rgba(55,138,221,0.25)', width: 2.5 },
+    { waves: 8, amp: 12, speed: 0.6, y: 0.58, color: 'rgba(29,158,117,0.2)', width: 1.5 },
+    { waves: 3, amp: 40, speed: 0.15, y: 0.65, color: 'rgba(181,212,244,0.15)', width: 3 },
+    { waves: 10, amp: 8, speed: 0.9, y: 0.72, color: 'rgba(55,138,221,0.12)', width: 1 },
+  ];
+  layers.forEach(l => {
+    ctx.beginPath();
+    ctx.strokeStyle = l.color;
+    ctx.lineWidth = l.width;
+    const baseY = H * l.y;
+    ctx.moveTo(0, baseY);
+    for (let x = 0; x <= W; x += 2) {
+      const y = baseY + Math.sin((x / W) * Math.PI * 2 * l.waves + t * l.speed) * l.amp
+                      + Math.sin((x / W) * Math.PI * 3.7 * l.waves + t * l.speed * 1.3 + 1.2) * (l.amp * 0.4);
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  });
+  t += 0.012;
+  requestAnimationFrame(drawOcean);
+}
+drawOcean();
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
